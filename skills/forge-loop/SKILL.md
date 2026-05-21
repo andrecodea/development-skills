@@ -68,11 +68,19 @@ Task (spec definida)
 
 ## Stage Definitions
 
+### Stage 0 — Investigação (opcional, `cavecrew-investigator`)
+
+**Quando usar:** codebase existente com código similar à tarefa. Localiza padrões, funções e convenções antes de gerar código novo — evita duplicação e garante consistência.
+
+**Quando pular:** tarefa isolada, greenfield, ou spec já inclui contexto suficiente.
+
+Use o agente `caveman:cavecrew-investigator`. Output: tabela `path:line — símbolo — nota`. Custo ~60% menor que Explore vanilla.
+
 ### Stage 1 — Codegen (`clean-codegen`)
 
 Gera o código seguindo as convenções do projeto e da linguagem alvo. Na segunda iteração em diante, recebe o feedback consolidado de todos os estágios anteriores que falharam.
 
-**Input:** spec da tarefa + linguagem/stack + feedback acumulado (se houver)
+**Input:** spec da tarefa + linguagem/stack + output do Stage 0 (se rodado) + feedback acumulado (se houver)
 **Output:** código completo, idiomático, tipado, sem dead code
 
 ### Stage 2 — Build + Test (comandos shell)
@@ -92,9 +100,15 @@ Estágio executado diretamente pelo orquestrador — não usa subagente. Roda o 
 
 Se o projeto não tiver testes ainda, pular a etapa de test e registrar no relatório final.
 
-### Stage 3 — Code Review (`code-reviewer`)
+### Stage 3 — Code Review
 
-Revisa estilo, idioma, legibilidade e documentação para a linguagem alvo.
+Duas opções — escolha por contexto de token:
+
+**Opção A — `caveman:cavecrew-reviewer`** *(padrão recomendado)*
+Output comprimido: `path:line: emoji severity: problema. fix.` — ~60% menos tokens que o agente vanilla. Use para a maioria dos casos.
+
+**Opção B — `code-reviewer`** *(full)*
+Análise detalhada com rationale e alternativas. Use quando o code-reviewer precisar julgar trade-offs arquiteturais ou o código for complexo o suficiente para exigir prosa.
 
 **Pass:** sem issues críticos (notas de estilo menor são informativas)
 **Fail (loop back):** lógica incorreta, antipadrões graves da linguagem, ausência de tipos em interfaces públicas
@@ -120,7 +134,7 @@ Atualiza ROADMAP.md, DESIGN.md e docs de módulo. **Não bloqueia o loop** — r
 
 ### Stage 7 — Commit / PR
 
-Commit com mensagem seguindo o padrão do repositório (convencional commits se configurado). PR se o trabalho estiver em branch feature.
+Invocar `caveman:caveman-commit` — gera mensagens de commit no estilo Conventional Commits com subject ≤50 chars automaticamente. PR se o trabalho estiver em branch feature.
 
 ## Como Executar
 
@@ -154,13 +168,16 @@ Reescreva o codigo abordando todos os pontos acima antes da proxima iteracao.
 
 ## Gate Summary
 
-| Estagio           | Loop back quando                  | Opcional?              |
-|-------------------|-----------------------------------|------------------------|
-| build + test      | Erro de build ou teste quebrado   | Nao                    |
-| code-reviewer     | Issue critico de logica/padrao    | Nao                    |
-| qa-code-optimizer | Safety/performance critico/high   | Sim (codigo simples)   |
-| devsecops-auditor | Finding medium+                   | Nao                    |
-| dev-doc-agent     | Nao bloqueia                      | Nao                    |
+| Estagio              | Agente                              | Loop back quando                | Opcional?            |
+|----------------------|-------------------------------------|---------------------------------|----------------------|
+| 0 — investigacao     | caveman:cavecrew-investigator       | nao aplica                      | Sim                  |
+| 1 — codegen          | clean-codegen                       | nao aplica                      | Nao                  |
+| 2 — build + test     | shell                               | build/teste quebrado            | Nao                  |
+| 3 — code review      | cavecrew-reviewer ou code-reviewer  | Issue critico logica/padrao     | Nao                  |
+| 4 — qa               | qa-code-optimizer                   | Safety/performance critico/high | Sim (simples)        |
+| 5 — security         | devsecops-auditor                   | Finding medium+                 | Nao                  |
+| 6 — docs             | dev-doc-agent                       | nao bloqueia                    | Nao                  |
+| 7 — commit           | caveman:caveman-commit              | nao aplica                      | Nao                  |
 
 ## Exit Conditions
 
