@@ -16,26 +16,35 @@ Pipeline completo de desenvolvimento:
  planejamento      qualidade + commit
 ```
 
-## Ponto de Entrada — Feature Dev ou Forge Loop direto?
+## Ponto de Entrada
 
-Antes de iniciar o Forge Loop, decida:
+Antes de iniciar, percorra a árvore abaixo. Claude detecta automaticamente e **confirma com o usuário antes de agir** — nunca decide silenciosamente.
 
 ```
 Tarefa recebida
       |
-      ├── É feature nova? (design, arquitetura, múltiplos arquivos, comportamento novo)
-      |        |
+      ├── Feature nova? (design, arquitetura, comportamento novo)
       |        └── SIM → invocar skill feature-dev:feature-dev PRIMEIRO
-      |                  Após Feature Dev concluir, retornar aqui e iniciar Forge Loop
+      |                  Retornar aqui após Feature Dev concluir
       |
-      └── É fix, refactor, função isolada ou spec já definida?
-               |
-               └── NÃO → iniciar Forge Loop diretamente (Stage 0 abaixo)
+      ├── Múltiplas tasks independentes? *
+      |        └── SIM → invocar skill superpowers:subagent-driven-development
+      |                  Cada task resultante passa pelo Forge Loop separadamente
+      |
+      └── Task única / fix / refactor / spec definida?
+               └── SIM → iniciar Forge Loop diretamente (Stage 0)
 ```
 
-**Como invocar Feature Dev:**
-Use o Skill tool com `skill: "feature-dev:feature-dev"` antes de iniciar o loop.
-Feature Dev cobre: discovery, exploração do codebase, perguntas clarificadoras, design de arquitetura e aprovação do usuário. O Forge Loop assume que a spec já está definida.
+**(*) Como detectar tasks independentes:**
+- Usuário listou X, Y e Z explicitamente sem dependência entre eles
+- Módulos distintos sem acoplamento óbvio
+- Plano já existe com itens separados
+
+**Quando ambíguo:** perguntar ao usuário antes de escolher. Nunca presumir.
+
+**Como invocar:**
+- Feature Dev: Skill tool com `skill: "feature-dev:feature-dev"`
+- Subagent-Driven Dev: Skill tool com `skill: "superpowers:subagent-driven-development"`
 
 ## Pré-requisitos (Bootstrap)
 
