@@ -9,6 +9,34 @@ description: Use when implementing code that must pass build, quality, security,
 
 Pipeline multi-agente que itera até todos os gates passarem. Cada estágio retorna **PASS** (avançar) ou **FAIL** (loop back ao codegen com feedback consolidado).
 
+Pipeline completo de desenvolvimento:
+
+```
+[Feature Dev]  →  [Forge Loop]
+ planejamento      qualidade + commit
+```
+
+## Ponto de Entrada — Feature Dev ou Forge Loop direto?
+
+Antes de iniciar o Forge Loop, decida:
+
+```
+Tarefa recebida
+      |
+      ├── É feature nova? (design, arquitetura, múltiplos arquivos, comportamento novo)
+      |        |
+      |        └── SIM → invocar skill feature-dev:feature-dev PRIMEIRO
+      |                  Após Feature Dev concluir, retornar aqui e iniciar Forge Loop
+      |
+      └── É fix, refactor, função isolada ou spec já definida?
+               |
+               └── NÃO → iniciar Forge Loop diretamente (Stage 0 abaixo)
+```
+
+**Como invocar Feature Dev:**
+Use o Skill tool com `skill: "feature-dev:feature-dev"` antes de iniciar o loop.
+Feature Dev cobre: discovery, exploração do codebase, perguntas clarificadoras, design de arquitetura e aprovação do usuário. O Forge Loop assume que a spec já está definida.
+
 ## Pré-requisitos (Bootstrap)
 
 Antes de iniciar, verifique se os agentes existem em `~/.claude/agents/`. Se ausentes, crie-os com as definições do Apêndice ao final desta skill.
@@ -23,7 +51,7 @@ Agentes necessários:
 ## Pipeline
 
 ```
-Task
+Task (spec definida)
  └─> [1] clean-codegen
       └─> [2] build + test (shell)
            FAIL ──────────────────────────────────> volta ao [1] com log
@@ -99,15 +127,16 @@ Commit com mensagem seguindo o padrão do repositório (convencional commits se 
 ```
 Quando o usuario disser "forge [tarefa]" ou invocar /forge-loop:
 
-1. Bootstrap: verificar e criar agentes ausentes (ver Apendice)
-2. Identificar: linguagem/stack do projeto (ler CLAUDE.md se presente)
-3. Anunciar: "Iniciando forge loop — iteracao 1 | stack: [linguagem]"
-4. Disparar estagios em sequencia — nunca em paralelo
-5. Apos cada gate: PASS ou FAIL?
+1. Ponto de entrada: feature nova? -> invocar feature-dev:feature-dev primeiro
+2. Bootstrap: verificar e criar agentes ausentes (ver Apendice)
+3. Identificar: linguagem/stack do projeto (ler CLAUDE.md se presente)
+4. Anunciar: "Iniciando forge loop — iteracao 1 | stack: [linguagem]"
+5. Disparar estagios em sequencia — nunca em paralelo
+6. Apos cada gate: PASS ou FAIL?
    - FAIL: consolidar todo feedback e retornar ao Stage 1
    - PASS: avancar ao proximo estagio
-6. Apos Stage 5 PASS: rodar Stage 6 (docs) e Stage 7 (commit)
-7. Relatorio final: iteracoes, issues por estagio, veredicto
+7. Apos Stage 5 PASS: rodar Stage 6 (docs) e Stage 7 (commit)
+8. Relatorio final: iteracoes, issues por estagio, veredicto
 ```
 
 ## Feedback Consolidado (Loop Back)
@@ -148,6 +177,7 @@ O loop termina quando:
 - "Ja rodei o review" — rode novamente apos qualquer mudanca
 - "Nao tem testes no projeto" — registre no relatorio, nao pule o build
 - "Docs podem vir depois" — Stage 6 e parte do loop, nao tarefa futura
+- "Feature Dev e opcional aqui" — se for feature nova, NAO pule o Feature Dev
 
 ---
 
